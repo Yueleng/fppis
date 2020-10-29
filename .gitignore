@@ -1,7 +1,7 @@
 .bsp/
 .idea/
 project/
-src/test/
+test/
 target/
 .scalafix.conf
 assignment.sbt

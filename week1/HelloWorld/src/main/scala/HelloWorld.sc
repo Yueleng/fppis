@@ -1,3 +1,4 @@
+import scala.annotation.tailrec
 
 "Hello World"
 
@@ -15,6 +16,7 @@ val example2 = 2 // evaluated immediately
 
 
 def sqrt(x: Double) = {
+  @tailrec
   def sqrtIter(guess: Double, x: Double): Double =
     if (isGoodEnough(guess, x)) guess
     else sqrtIter(improves(guess, x), x)
@@ -30,6 +32,7 @@ def sqrt(x: Double) = {
 }
 
 def sqrtConcise(x: Double) = {
+  @tailrec
   def sqrtIter(guess: Double): Double =
     if (isGoodEnough(guess)) guess
     else sqrtIter(improves(guess))
