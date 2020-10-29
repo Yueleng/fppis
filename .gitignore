@@ -1,0 +1,8 @@
+.bsp/
+.idea/
+project/
+src/test/
+target/
+.scalafix.conf
+assignment.sbt
+build.sbt
