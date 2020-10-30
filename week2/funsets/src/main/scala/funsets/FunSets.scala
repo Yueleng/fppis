@@ -18,31 +18,31 @@ trait FunSets extends FunSetsInterface {
   /**
    * Returns the set of the one given element.
    */
-  def singletonSet(elem: Int): FunSet = ???
+  def singletonSet(elem: Int): FunSet = givenElem => elem == givenElem
 
 
   /**
    * Returns the union of the two given sets,
    * the sets of all elements that are in either `s` or `t`.
    */
-  def union(s: FunSet, t: FunSet): FunSet = ???
+  def union(s: FunSet, t: FunSet): FunSet = givenElement => s(givenElement) || t(givenElement)
 
   /**
    * Returns the intersection of the two given sets,
    * the set of all elements that are both in `s` and `t`.
    */
-  def intersect(s: FunSet, t: FunSet): FunSet = ???
+  def intersect(s: FunSet, t: FunSet): FunSet = givenElement => s(givenElement) && t(givenElement)
 
   /**
    * Returns the difference of the two given sets,
    * the set of all elements of `s` that are not in `t`.
    */
-  def diff(s: FunSet, t: FunSet): FunSet = ???
+  def diff(s: FunSet, t: FunSet): FunSet = givenElement => s(givenElement) && !t(givenElement)
 
   /**
    * Returns the subset of `s` for which `p` holds.
    */
-  def filter(s: FunSet, p: Int => Boolean): FunSet = ???
+  def filter(s: FunSet, p: Int => Boolean): FunSet = givenElement => if (p(givenElement)) s(givenElement) else false
 
 
   /**
@@ -55,23 +55,34 @@ trait FunSets extends FunSetsInterface {
    */
   def forall(s: FunSet, p: Int => Boolean): Boolean = {
     def iter(a: Int): Boolean = {
-      if (???) ???
-      else if (???) ???
-      else iter(???)
+      if (a > bound) true
+      else if (s(a) && !p(a)) false
+      else iter(a + 1)
     }
-    iter(???)
+    iter(-bound)
   }
 
   /**
    * Returns whether there exists a bounded integer within `s`
    * that satisfies `p`.
    */
-  def exists(s: FunSet, p: Int => Boolean): Boolean = ???
+//  def exists(s: FunSet, p: Int => Boolean): Boolean = {
+//    def iter(a: Int): Boolean = {
+//      if (a > bound) false
+//      else if (s(a) && p(a)) true
+//      else iter(a+1)
+//    }
+//    iter(-bound)
+//  }
+
+  def exists(s: FunSet, p: Int => Boolean): Boolean = !forall(s, x => !p(x))
 
   /**
    * Returns a set transformed by applying `f` to each element of `s`.
    */
-  def map(s: FunSet, f: Int => Int): FunSet = ???
+  def map(s: FunSet, f: Int => Int): FunSet = {
+    givenElement => exists(s, x => f(x) == givenElement)
+  }
 
   /**
    * Displays the contents of a set
