@@ -22,9 +22,10 @@ object example extends App {
 
 class Rational(x: Int, y: Int) {
   require(y != 0, "denominator must be nonzero")
-
+  // CONSTRUCTOR OVERLOADING
   def this(x: Int) = this(x, 1) // alternative constructor
 
+  // Start of PRIMARY CONSTRUCTOR
   private def gcd(a: Int, b: Int): Int = if (b == 0) a else gcd(b, a % b)
   private val g = gcd(x, y)
 //  def numer: Int = x / g
@@ -33,6 +34,7 @@ class Rational(x: Int, y: Int) {
   // only computed once.
   val numer: Int = x / g
   val denom: Int = y / g
+  // end of PRIMARY CONSTRUCTOR
 
   def + (that: Rational) =
     new Rational(

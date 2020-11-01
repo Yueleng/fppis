@@ -61,3 +61,18 @@ sqrtConcise(2)
 
 val x = 1
 val y = x + 1; y*y
+
+
+// Week3
+def error(msg: String) = throw new Error(msg)
+val nulll = null
+val javaString: String = nulll
+
+// null not subtype of scala.AnyVal.
+// Instead null is subtype of scale.AnyRef(i.e. java.lang.Object)
+// val z: Int = nulll
+
+// returns AnyVal
+if (true) 1 else false
+
+
