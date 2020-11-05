@@ -95,6 +95,15 @@ trait Huffman extends HuffmanInterface {
     timesIter(chars, List())
   }
 
+  def timesAlt(chars: List[Char]): List[(Char, Int)] = {
+    @tailrec
+    def times_helper(charList: List[Char], acc: List[(Char, Int)]): List[(Char, Int)] = charList match {
+      case Nil => acc
+      case x :: xs => times_helper(xs.filter(_ != x), (x, xs.count(_ == x)) :: acc)
+    }
+    times_helper(chars, List())
+  }
+
   /**
    * Returns a list of `Leaf` nodes for a given frequency table `freqs`.
    *
@@ -113,6 +122,10 @@ trait Huffman extends HuffmanInterface {
     makeIter(freqs, List())
   }
 
+  def makeOrderedLeafListAlt(freqs: List[(Char, Int)]): List[Leaf] = {
+    freqs.sortBy(_._2).map(t => Leaf(t._1, t._2))
+  }
+
   /**
    * Checks whether the list `trees` contains only one single code tree.
    */
@@ -121,6 +134,8 @@ trait Huffman extends HuffmanInterface {
     else if (trees.tail.isEmpty) true
     else false
   }
+
+  def singletonAlt(trees: List[CodeTree]): Boolean = trees.length == 1
 
   /**
    * The parameter `trees` of this function is a list of code trees ordered
@@ -147,6 +162,12 @@ trait Huffman extends HuffmanInterface {
     else insert(makeCodeTree(trees.head, trees.tail.head), trees.tail.tail)
   }
 
+  def combineAlt(trees: List[CodeTree]): List[CodeTree] = trees match {
+    case Nil => trees
+    case x :: Nil => trees
+    case a :: b :: xs => (makeCodeTree(a, b) :: xs).sortBy(weight(_))
+  }
+
   /**
    * This function will be called in the following way:
    *
@@ -161,6 +182,7 @@ trait Huffman extends HuffmanInterface {
   def until(done: List[CodeTree] => Boolean, merge: List[CodeTree] => List[CodeTree])(trees: List[CodeTree]): List[CodeTree] =
     if (done(trees)) trees
     else until(done, merge)(merge(trees))
+
 
   /**
    * This function creates a code tree which is optimal to encode the text `chars`.
@@ -188,6 +210,21 @@ trait Huffman extends HuffmanInterface {
       else /*bits.head == 1 && isForm == true*/  decodeIter(right(huffmanTree), secrets.tail, acc)
 
     decodeIter(tree, bits, List())
+  }
+
+  def decodeAlt(tree: CodeTree, bits: List[Bit]): List[Char] = {
+    @tailrec
+    def rec(root: CodeTree, bitList: List[Bit], acc: List[Char]): List[Char] = bitList match {
+      case Nil => root match {
+        case Leaf(c, _) => acc :+ c // append element to the end, also, note this is the method to retrieve constructor element with out helper func
+        case Fork(_, _, _, _) => throw new Error("Invalid secret")
+      }
+      case x :: xs => root match {
+        case Leaf(c, _) => rec(tree, bitList, acc :+ c) // go back to the root of tree, after successfully decoded one Char
+        case Fork(left, right, _, _) => rec(if (x == 0) left else right, xs, acc)
+      }
+    }
+    rec(tree, bits, List())
   }
 
   /**
@@ -228,6 +265,15 @@ trait Huffman extends HuffmanInterface {
     encodeIter(tree, text, List())
   }
 
+  def encodeAlt(tree: CodeTree)(text: List[Char]): List[Bit] = {
+    def lookup(tree: CodeTree)(c: Char): List[Bit] = tree match {
+      case Leaf(_, _) => List()
+      case Fork(left, _, _, _) if chars(left).contains(c) => 0 :: lookup(left)(c)
+      case Fork(_, right, _, _) => 1 :: lookup(right)(c)
+    }
+    text.flatMap(lookup(tree))
+  }
+
   // Part 4b: Encoding using code table
 
   type CodeTable = List[(Char, List[Bit])]
@@ -239,6 +285,10 @@ trait Huffman extends HuffmanInterface {
   def codeBits(table: CodeTable)(char: Char): List[Bit] = {
     if (table.head._1 == char) table.head._2
     else codeBits(table.tail)(char)
+  }
+
+  def codeBitsAlt(table: CodeTable)(char: Char): List[Bit] = {
+    table.filter(code => code._1 == char).head._2
   }
 
   /**
@@ -268,6 +318,12 @@ trait Huffman extends HuffmanInterface {
     addBits(a, 0, List()) ::: addBits(b, 1, List())
   }
 
+  type Code = (Char, List[Bit])
+  def mergeCodeTablesAlt(a: CodeTable, b: CodeTable): CodeTable = {
+    def prepend(b: Bit)(code: Code): Code = (code._1, b :: code._2)
+    a.map(prepend(0)) ::: b.map(prepend(1))
+  }
+
   /**
    * This function encodes `text` according to the code tree `tree`.
    *
@@ -289,6 +345,9 @@ trait Huffman extends HuffmanInterface {
 
     quickEncodeIter(text, convert(tree), List())
   }
+
+  def quickEncodeAlt(tree: CodeTree)(text: List[Char]): List[Bit] = text.flatMap(codeBits(convert(tree)))
+
 }
 
 object Huffman extends Huffman
