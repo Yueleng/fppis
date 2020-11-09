@@ -150,5 +150,7 @@ object Example extends App {
     encode(number) map (_ mkString " ")
 
   translate("7225247386")
+
+
   
 }
