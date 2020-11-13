@@ -79,7 +79,7 @@ trait GameDef {
    * This function returns the block at the start position of
    * the game.
    */
-  def startBlock: Block = ???
+  def startBlock: Block = Block(startPos, startPos)
 
 
   /**
@@ -130,22 +130,57 @@ trait GameDef {
      * Returns the list of blocks that can be obtained by moving
      * the current block, together with the corresponding move.
      */
-    def neighbors: List[(Block, Move)] = ???
+    def neighbors: List[(Block, Move)] = {
+      val directions = List(Left, Right, Up, Down)
+      for {
+        move <- directions
+        // if afterMove(move).isLegal // no need to verify here, we will verify in `legalNeighbors` below
+      } yield (afterMove(move), move)
+    }
+
+    def neighborsAlt: List[(Block, Move)] = {
+      val moves: List[Move] = List(Left, Right, Up, Down)
+      moves map {
+        case Left => (left, Left)
+        case Right => (right, Right)
+        case Up => (up, Up)
+        case Down => (down, Down)
+      }
+    }
+
+    // Helpter Func
+    /**
+     * Return the block after move action: Left, Right, Up, Down
+     */
+    def afterMove(move: Move): Block = move match {
+        case Left => left
+        case Right => right
+        case Up => up
+        case Down => down
+    }
+
 
     /**
      * Returns the list of positions reachable from the current block
      * which are inside the terrain.
      */
-    def legalNeighbors: List[(Block, Move)] = ???
+    def legalNeighbors: List[(Block, Move)] = {
+      for {
+        neighbor <- neighbors
+        if neighbor._1.isLegal
+      } yield neighbor
+    }
+
+    def legalNeighborsAlt: List[(Block, Move)] = neighbors filter (_._1.isLegal)
 
     /**
      * Returns `true` if the block is standing.
      */
-    def isStanding: Boolean = ???
+    def isStanding: Boolean = b1 == b2
 
     /**
      * Returns `true` if the block is entirely inside the terrain.
      */
-    def isLegal: Boolean = ???
+    def isLegal: Boolean = terrain(b1) && terrain(b2)
   }
 }
