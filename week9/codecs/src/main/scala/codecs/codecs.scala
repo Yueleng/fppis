@@ -81,11 +81,14 @@ trait EncoderInstances {
     Encoder.fromFunction(n => Json.Num(BigDecimal(n)))
 
   /** An encoder for `String` values */
-  implicit val stringEncoder: Encoder[String] =
-    ??? // TODO Implement the `Encoder[String]` instance
+  implicit val stringEncoder: Encoder[String] = {
+    Encoder.fromFunction(s => Json.Str(s))
+  } // TODO Implement the `Encoder[String]` instance
 
   /** An encoder for `Boolean` values */
-  // TODO Define an implicit value of type `Encoder[Boolean]`
+  implicit val booleanEncoder: Encoder[Boolean] = {
+    Encoder.fromFunction(b => Json.Bool(b))
+  } // TODO Define an implicit value of type `Encoder[Boolean]`
 
   /**
     * Encodes a list of values of type `A` into a JSON array containing
@@ -188,12 +191,25 @@ trait DecoderInstances {
 
   /** A decoder for `Int` values. Hint: use the `isValidInt` method of `BigDecimal`. */
   // TODO Define an implicit value of type `Decoder[Int]`
+  implicit val intDecoder: Decoder[Int] =
+    Decoder.fromPartialFunction {
+      // case Json.Num(n) => if (n.isValidInt) n.intValue else throw new IllegalArgumentException
+      // why?
+      case Json.Num(n) if n.isValidInt => n.intValue
+    }
 
   /** A decoder for `String` values */
   // TODO Define an implicit value of type `Decoder[String]`
-
+  implicit val stringDecoder: Decoder[String] =
+    Decoder.fromPartialFunction {
+      case Json.Str(s) => s
+    }
   /** A decoder for `Boolean` values */
   // TODO Define an implicit value of type `Decoder[Boolean]`
+  implicit val booleanDecoder: Decoder[Boolean] =
+    Decoder.fromPartialFunction {
+      case Json.Bool(b) => b
+    }
 
   /**
     * A decoder for JSON arrays. It decodes each item of the array
@@ -201,16 +217,33 @@ trait DecoderInstances {
     * if all the JSON array items are successfully decoded.
     */
   implicit def listDecoder[A](implicit decoder: Decoder[A]): Decoder[List[A]] =
-    Decoder.fromFunction {
-      ???
+    //    Decoder.fromPartialFunction {
+    //       case Json.Arr(jsonAs) => {
+    //         val as = jsonAs.flatMap(decoder.decode)
+    //         if (as.length == jsonAs.length) as
+    //         else Nil
+    //       }
+    //       case _ => Nil
+    //    }
+
+    Decoder.fromPartialFunction {
+      case Json.Arr(jsonAs) => jsonAs flatMap decoder.decode
     }
+    //      case Json.Arr(jsonAs) =>
+    //        for {
+    //          jsonA <- jsonAs
+    //
+    //        } yield decoder.decode(jsonA)
+    //    }
 
   /**
     * A decoder for JSON objects. It decodes the value of a field of
     * the supplied `name` using the given `decoder`.
     */
   def field[A](name: String)(implicit decoder: Decoder[A]): Decoder[A] =
-    ???
+    Decoder.fromFunction {
+      case Json.Obj(obj) => decoder.decode(obj(name))
+    }
 
 }
 
@@ -228,7 +261,9 @@ trait PersonCodecs {
 
   /** The corresponding decoder for `Person` */
   implicit val personDecoder: Decoder[Person] =
-    ???
+    Decoder.field[String]("name")
+      .zip(Decoder.field[Int]("age"))
+      .transform[Person](person => Person(person._1, person._2))
 
 }
 
@@ -242,8 +277,16 @@ trait ContactsCodecs {
   // The JSON representation of a value of type `Contacts` should be
   // a JSON object with a single field named “people” containing an
   // array of values of type `Person` (reuse the `Person` codecs)
+  implicit val contactsEncoder: Encoder[Contacts] =
+    ObjectEncoder.field[List[Person]]("people").transform[Contacts](contacts => contacts.people)
+
+  implicit val contactsDecoder: Decoder[Contacts] =
+    Decoder.field[List[Person]]("people").transform[Contacts](people => Contacts(people))
+
+
 
 }
+
 
 // In case you want to try your code, here is a simple `Main`
 // that can be used as a starting point. Otherwise, you can use
