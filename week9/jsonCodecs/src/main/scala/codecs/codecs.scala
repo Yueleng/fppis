@@ -217,6 +217,83 @@ trait DecoderInstances {
    * using the given `decoder`. The resulting decoder succeeds only
    * if all the JSON array items are successfully decoded.
    */
-  implicit def listDecoder[A](implicit decoder: Decoder[A]): Decoder[List[A]] =
-    Decoder.fromPartialFunction(jsonAs => jsonAs.map())
+  implicit def listDecoder[A](implicit decoder: Decoder[A]): Decoder[List[A]] = {
+    // Not Correct: Required: scala.List[A], Found: List[Option[A]]
+    //    Decoder.fromPartialFunction {
+    //      case Json.Arr(items) => items map decoder.decode
+    //    }
+    Decoder.fromPartialFunction {
+      case Json.Arr(items) => items flatMap decoder.decode
+    }
+  }
+
+  /**
+   * A decoder for JSON objects. It decodes the value of a field of
+   * the supplied `name` using the given `decoder`.
+   */
+  def field[A](name: String)(implicit decoder: Decoder[A]): Decoder[A] = {
+    // Correct
+    //    Decoder.fromPartialFunction {
+    //      case Json.Obj(fields) => (List(fields(name)) flatMap decoder.decode).head
+    //    }
+
+    Decoder.fromFunction {
+      case Json.Obj(fields) => decoder.decode(fields(name))
+    }
+  }
+}
+
+case class Person(name: String, age: Int)
+
+object Person extends PersonCodecs
+
+trait PersonCodecs {
+
+  /** The encoder for `Person` */
+  implicit val personEncoder: Encoder[Person] =
+    ObjectEncoder.field[String]("name")
+      .zip(ObjectEncoder.field[Int]("age"))
+      .transform[Person](user => (user.name, user.age))
+
+  /** The corresponding decoder for `Person` */
+  implicit val personDecoder: Decoder[Person] =
+    Decoder.field[String]("name")
+      .zip(Decoder.field[Int]("age"))
+      .transform[Person](person => Person(person._1, person._2))
+}
+
+case class Contacts(people: List[Person])
+
+object Contacts extends ContactsCodecs
+
+trait ContactsCodecs {
+  /**
+   * The JSON representation of a value of type `Contacts` should be
+   * a JSON object with a single field named "people" containing an array of values
+   * of type `Person` (reuse the `Person` codecs)
+   * */
+  implicit val contactEncoder: Encoder[Contacts] =
+    ObjectEncoder.field[List[Person]]("people").transform[Contacts](contacts => contacts.people)
+
+  implicit val contactsDecoder: Decoder[Contacts] =
+    Decoder.field[List[Person]]("people").transform[Contacts](people => Contacts(people))
+}
+
+object Main {
+  import Util._
+
+  def main(args: Array[String]): Unit = {
+    println(renderJson(42))
+    println(renderJson("foo"))
+
+    val maybeJsonString = parseJson(""" "foo" """)
+    val maybeJsonObj    = parseJson(""" { "name": "Alice", "age": 42} """)
+    val maybeJsonObj2    = parseJson(""" { "name": "Alice", "age": "42"} """)
+    println(maybeJsonString.flatMap(_.decodeAs[Int]))
+    println(maybeJsonString.flatMap(_.decodeAs[String]))
+    println(maybeJsonObj.flatMap(_.decodeAs[Person]))
+    println(maybeJsonObj2.flatMap(_.decodeAs[Person]))
+    println(renderJson(Person("Bob", 66)))
+  }
+
 }
