@@ -9,3 +9,4 @@ build.sbt
 week16/wikipedia.zip
 week16/wikipedia/src/main/resources/wikipedia/wikipedia.dat
 week17/stackoverflow/src/main/resources/stackoverflow.csv
+week19/timeusage/src/main/scala/timeusage/resources/timeusage/atussum.csv
